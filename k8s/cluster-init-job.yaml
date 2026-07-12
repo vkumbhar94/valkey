@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: valkey-cluster-init
+  namespace: development
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: cluster-init
+          image: valkey/valkey:9.0.4-alpine
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              NAMESPACE=development
+              SVC=valkey-headless
+              REPLICAS=2
+
+              echo "Waiting for all Valkey pods to be ready..."
+              HOSTS=""
+              for i in $(seq 0 $((REPLICAS - 1))); do
+                HOST="valkey-${i}.${SVC}.${NAMESPACE}.svc.cluster.local"
+                echo "Waiting for ${HOST}..."
+                until valkey-cli -h "${HOST}" -p 6379 ping 2>/dev/null | grep -q PONG; do
+                  sleep 2
+                done
+                echo "${HOST} is ready"
+                HOSTS="${HOSTS} ${HOST}:6379"
+              done
+
+              echo "All pods ready. Initializing cluster..."
+              valkey-cli --cluster create ${HOSTS} \
+                --cluster-replicas 1 \
+                --cluster-yes
+
+              echo "Cluster initialized successfully."
+              valkey-cli -h valkey-0.${SVC}.${NAMESPACE}.svc.cluster.local cluster info

@@ -1,0 +1,47 @@
+# ── Strings ──────────────────────────────────────────────
+SET user:1:name "Alice"
+SET user:2:name "Bob"
+SET user:3:name "Charlie"
+SET app:version "1.0.0"
+SET app:env "development"
+SETEX session:abc123 3600 "user:1"
+SETEX session:def456 3600 "user:2"
+
+# ── Counters ──────────────────────────────────────────────
+SET page:views:home 1024
+SET page:views:about 512
+SET page:views:contact 256
+INCR page:views:home
+INCR page:views:home
+
+# ── Hashes ───────────────────────────────────────────────
+HSET user:1 name "Alice" email "alice@example.com" age "30" role "admin" active "true"
+HSET user:2 name "Bob" email "bob@example.com" age "25" role "editor" active "true"
+HSET user:3 name "Charlie" email "charlie@example.com" age "35" role "viewer" active "false"
+
+HSET product:101 name "Laptop" price "999.99" stock "50" category "electronics"
+HSET product:102 name "Headphones" price "149.99" stock "200" category "electronics"
+HSET product:103 name "Desk Chair" price "299.99" stock "30" category "furniture"
+
+# ── Lists ────────────────────────────────────────────────
+RPUSH notifications:user:1 "Welcome to the platform!" "Your profile is complete." "New message from Bob."
+RPUSH notifications:user:2 "Welcome to the platform!" "Verify your email."
+RPUSH job:queue "job:send-email:1001" "job:send-email:1002" "job:generate-report:2001"
+RPUSH recent:searches "valkey" "redis" "kubernetes" "docker" "golang"
+
+# ── Sets ─────────────────────────────────────────────────
+SADD tags:product:101 "laptop" "computer" "electronics" "portable"
+SADD tags:product:102 "audio" "electronics" "wireless" "music"
+SADD roles:admin "user:1"
+SADD roles:editor "user:1" "user:2"
+SADD roles:viewer "user:1" "user:2" "user:3"
+SADD online:users "user:1" "user:2"
+
+# ── Sorted Sets ──────────────────────────────────────────
+ZADD leaderboard 9500 "alice" 8700 "bob" 7200 "charlie" 6100 "dave" 5500 "eve"
+ZADD product:ratings 4.8 "product:101" 4.5 "product:102" 3.9 "product:103"
+ZADD events:schedule 1700000000 "event:launch" 1700003600 "event:demo" 1700007200 "event:review"
+
+# ── JSON-like strings ─────────────────────────────────────
+SET config:feature-flags "{\"darkMode\":true,\"betaFeatures\":false,\"maxUploadMb\":10}"
+SET config:rate-limits "{\"api\":{\"perMinute\":60,\"perHour\":1000},\"auth\":{\"perMinute\":10}}"
