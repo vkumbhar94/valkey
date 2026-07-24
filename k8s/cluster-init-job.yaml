@@ -31,10 +31,15 @@ spec:
                 HOSTS="${HOSTS} ${HOST}:6379"
               done
 
-              echo "All pods ready. Initializing cluster..."
-              valkey-cli --cluster create ${HOSTS} \
-                --cluster-replicas 1 \
-                --cluster-yes
+              STATE=$(valkey-cli -h "valkey-0.${SVC}.${NAMESPACE}.svc.cluster.local" cluster info 2>/dev/null | grep -o 'cluster_state:ok' || true)
+              if [ -n "${STATE}" ]; then
+                echo "Cluster already initialized, skipping create."
+              else
+                echo "All pods ready. Initializing cluster..."
+                valkey-cli --cluster create ${HOSTS} \
+                  --cluster-replicas 1 \
+                  --cluster-yes
+                echo "Cluster initialized successfully."
+              fi
 
-              echo "Cluster initialized successfully."
               valkey-cli -h valkey-0.${SVC}.${NAMESPACE}.svc.cluster.local cluster info

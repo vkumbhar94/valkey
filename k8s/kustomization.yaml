@@ -7,5 +7,6 @@ resources:
   - configmap.yaml
   - service.yaml
   - statefulset.yaml
+  - pdb.yaml
   - cluster-init-job.yaml
   - redisinsight.yaml

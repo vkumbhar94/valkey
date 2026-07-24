@@ -11,17 +11,39 @@ spec:
   selector:
     matchLabels:
       app: valkey-cluster
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   template:
     metadata:
       labels:
         app: valkey-cluster
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: valkey-cluster
       containers:
         - name: valkey
           image: valkey/valkey:9.0.4-alpine
           command:
-            - valkey-server
-            - /etc/valkey/valkey.conf
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              exec valkey-server /etc/valkey/valkey.conf \
+                --cluster-announce-hostname "$(hostname).valkey-headless.${NAMESPACE}.svc.cluster.local" \
+                --cluster-preferred-endpoint-type hostname
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           ports:
             - containerPort: 6379
               name: client
@@ -35,8 +57,14 @@ spec:
           readinessProbe:
             exec:
               command:
-                - valkey-cli
-                - ping
+                - /bin/sh
+                - -c
+                - |
+                  valkey-cli ping | grep -q PONG || exit 1
+                  ROLE=$(valkey-cli info replication | grep -m1 '^role:' | cut -d: -f2 | tr -d '\r')
+                  if [ "$ROLE" = "slave" ]; then
+                    valkey-cli info replication | grep -q '^master_link_status:up' || exit 1
+                  fi
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
